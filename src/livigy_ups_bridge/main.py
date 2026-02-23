@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import socket
 import time
 from dataclasses import dataclass
 
-import paho.mqtt.client as mqtt
 import yaml
 
 from .parser import parse_f, parse_i, parse_q1
+from .publishers import PublisherConfig, build_publisher
 
 _LOG = logging.getLogger("livigy_ups_bridge")
 
@@ -20,38 +19,42 @@ class Config:
     ups_host: str
     ups_port: int
     ups_timeout_seconds: float
-    mqtt_host: str
-    mqtt_port: int
-    mqtt_username: str
-    mqtt_password: str
-    mqtt_client_id: str
-    discovery_prefix: str
-    state_topic_prefix: str
     poll_interval_seconds: int
-    device_name: str
-    device_identifier: str
-    manufacturer: str
+    output: PublisherConfig
 
 
 def load_config(path: str) -> Config:
     with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
+    output = data.get("output", {})
+    mqtt_cfg = data.get("mqtt", {})
+    ha_api_cfg = data.get("ha_api", {})
+    bridge_cfg = data.get("bridge", {})
+
+    publisher_cfg = PublisherConfig(
+        mode=str(output.get("mode", "mqtt")),
+        device_name=str(bridge_cfg.get("device_name", "Livigy UPS")),
+        device_identifier=str(bridge_cfg.get("device_identifier", "livigy_ups_main")),
+        manufacturer=str(bridge_cfg.get("manufacturer", "Livigy / PowerShield")),
+        mqtt_host=str(mqtt_cfg.get("host", "")),
+        mqtt_port=int(mqtt_cfg.get("port", 1883)),
+        mqtt_username=str(mqtt_cfg.get("username", "")),
+        mqtt_password=str(mqtt_cfg.get("password", "")),
+        mqtt_client_id=str(mqtt_cfg.get("client_id", "livigy-ups-bridge")),
+        discovery_prefix=str(mqtt_cfg.get("discovery_prefix", "homeassistant")),
+        state_topic_prefix=str(mqtt_cfg.get("state_topic_prefix", "livigy_ups")),
+        ha_base_url=str(ha_api_cfg.get("base_url", "")),
+        ha_token=str(ha_api_cfg.get("token", "")),
+        ha_verify_ssl=bool(ha_api_cfg.get("verify_ssl", True)),
+    )
+
     return Config(
         ups_host=data["ups"]["host"],
         ups_port=int(data["ups"]["port"]),
         ups_timeout_seconds=float(data["ups"].get("timeout_seconds", 2)),
-        mqtt_host=data["mqtt"]["host"],
-        mqtt_port=int(data["mqtt"].get("port", 1883)),
-        mqtt_username=str(data["mqtt"].get("username", "")),
-        mqtt_password=str(data["mqtt"].get("password", "")),
-        mqtt_client_id=str(data["mqtt"].get("client_id", "livigy-ups-bridge")),
-        discovery_prefix=str(data["mqtt"].get("discovery_prefix", "homeassistant")),
-        state_topic_prefix=str(data["mqtt"].get("state_topic_prefix", "livigy_ups")),
-        poll_interval_seconds=int(data["bridge"].get("poll_interval_seconds", 15)),
-        device_name=str(data["bridge"].get("device_name", "Livigy UPS")),
-        device_identifier=str(data["bridge"].get("device_identifier", "livigy_ups_main")),
-        manufacturer=str(data["bridge"].get("manufacturer", "Livigy / PowerShield")),
+        poll_interval_seconds=int(bridge_cfg.get("poll_interval_seconds", 15)),
+        output=publisher_cfg,
     )
 
 
@@ -64,93 +67,9 @@ def send_ups_command(host: str, port: int, timeout_seconds: float, cmd: str) -> 
     return data.decode("ascii", errors="ignore").strip()
 
 
-def mqtt_publish_json(client: mqtt.Client, topic: str, payload: dict) -> None:
-    client.publish(topic, json.dumps(payload), retain=True)
-
-
-def publish_discovery(client: mqtt.Client, cfg: Config) -> None:
-    device = {
-        "identifiers": [cfg.device_identifier],
-        "name": cfg.device_name,
-        "manufacturer": cfg.manufacturer,
-    }
-
-    sensors = [
-        ("input_voltage", "Input Voltage", "V", "voltage"),
-        ("fault_voltage", "Fault Voltage", "V", "voltage"),
-        ("output_voltage", "Output Voltage", "V", "voltage"),
-        ("load_percent", "UPS Load", "%", None),
-        ("input_frequency_hz", "Input Frequency", "Hz", "frequency"),
-        ("battery_voltage", "Battery Voltage", "V", "voltage"),
-        ("temperature_c", "UPS Temperature", "\u00b0C", "temperature"),
-        ("model", "UPS Model", None, None),
-        ("firmware", "UPS Firmware", None, None),
-        ("company", "UPS Company", None, None),
-        ("rated_voltage", "Rated Voltage", "V", "voltage"),
-        ("rated_current", "Rated Current", "A", "current"),
-        ("rated_battery_voltage", "Rated Battery Voltage", "V", "voltage"),
-        ("rated_frequency_hz", "Rated Frequency", "Hz", "frequency"),
-    ]
-
-    binary_sensors = [
-        ("utility_fail", "Utility Fail"),
-        ("battery_low", "Battery Low"),
-        ("avr_active", "AVR Active"),
-        ("ups_failed", "UPS Failed"),
-        ("standby_type", "Standby Type"),
-        ("test_in_progress", "Test In Progress"),
-        ("shutdown_active", "Shutdown Active"),
-        ("beeper_on", "Beeper On"),
-    ]
-
-    for key, name, unit, dev_class in sensors:
-        uid = f"{cfg.device_identifier}_{key}"
-        topic = f"{cfg.discovery_prefix}/sensor/{uid}/config"
-        state_topic = f"{cfg.state_topic_prefix}/state/{key}"
-        payload = {
-            "name": name,
-            "unique_id": uid,
-            "state_topic": state_topic,
-            "device": device,
-        }
-        if unit:
-            payload["unit_of_measurement"] = unit
-        if dev_class:
-            payload["device_class"] = dev_class
-        mqtt_publish_json(client, topic, payload)
-
-    for key, name in binary_sensors:
-        uid = f"{cfg.device_identifier}_{key}"
-        topic = f"{cfg.discovery_prefix}/binary_sensor/{uid}/config"
-        state_topic = f"{cfg.state_topic_prefix}/state/{key}"
-        payload = {
-            "name": name,
-            "unique_id": uid,
-            "state_topic": state_topic,
-            "payload_on": "ON",
-            "payload_off": "OFF",
-            "device": device,
-        }
-        mqtt_publish_json(client, topic, payload)
-
-
-def publish_state(client: mqtt.Client, cfg: Config, key: str, value: object) -> None:
-    topic = f"{cfg.state_topic_prefix}/state/{key}"
-    if isinstance(value, bool):
-        payload = "ON" if value else "OFF"
-    else:
-        payload = str(value)
-    client.publish(topic, payload, retain=True)
-
-
 def run(cfg: Config) -> None:
-    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=cfg.mqtt_client_id)
-    if cfg.mqtt_username:
-        client.username_pw_set(cfg.mqtt_username, cfg.mqtt_password)
-    client.connect(cfg.mqtt_host, cfg.mqtt_port, keepalive=60)
-    client.loop_start()
-
-    publish_discovery(client, cfg)
+    publisher = build_publisher(cfg.output)
+    publisher.setup()
 
     while True:
         try:
@@ -164,11 +83,11 @@ def run(cfg: Config) -> None:
             f_data = parse_f(f_raw)
 
             for key, value in q1.__dict__.items():
-                publish_state(client, cfg, key, value)
+                publisher.publish_state(key, value)
             for key, value in i_data.items():
-                publish_state(client, cfg, key, value)
+                publisher.publish_state(key, value)
             for key, value in f_data.items():
-                publish_state(client, cfg, key, value)
+                publisher.publish_state(key, value)
 
             _LOG.info("Published UPS state successfully")
         except Exception as exc:  # pylint: disable=broad-except
@@ -178,7 +97,7 @@ def run(cfg: Config) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Livigy UPS MQTT bridge")
+    parser = argparse.ArgumentParser(description="Livigy UPS HAOS bridge")
     parser.add_argument("--config", required=True, help="Path to YAML config")
     args = parser.parse_args()
 

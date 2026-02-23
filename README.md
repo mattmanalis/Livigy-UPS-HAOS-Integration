@@ -1,14 +1,13 @@
 # Livigy UPS -> Home Assistant (HAOS) Bridge
 
-MQTT bridge for Livigy UPS units rebadged from PowerShield devices that speak Megatec/Q1 serial protocol over an IP-to-serial adapter.
+Bridge for Livigy UPS units rebadged from PowerShield devices that speak Megatec/Q1 serial protocol over an IP-to-serial adapter.
 
 ## What it does
 
 - Connects to a TCP serial adapter (`adapter_ip:port`)
 - Polls UPS commands: `Q1`, `I`, `F`
 - Parses live telemetry and status bits
-- Publishes Home Assistant MQTT Discovery sensors and binary sensors
-- Publishes state updates to MQTT topics for HAOS
+- Publishes to either `mqtt` mode or `ha_api` mode
 
 ## Protocol assumptions
 
@@ -18,9 +17,12 @@ MQTT bridge for Livigy UPS units rebadged from PowerShield devices that speak Me
 
 ## Quick start
 
-1. Ensure Home Assistant has MQTT configured.
-2. Copy `config.example.yaml` to `config.yaml` and edit values.
-3. Run bridge:
+1. Copy `config.example.yaml` to `config.yaml` and edit values.
+2. Choose `output.mode`:
+`mqtt` if you want auto-discovery entities via MQTT.
+`ha_api` if you want direct API updates without MQTT.
+3. If using `ha_api`, create a Home Assistant long-lived access token and set `ha_api.token`.
+4. Run bridge:
 
 ```bash
 python -m venv .venv
@@ -38,10 +40,18 @@ docker run --rm -it \
   livigy-ups-ha-bridge
 ```
 
-## MQTT topics
+## Output modes
+
+### MQTT mode
 
 - Discovery topics: `homeassistant/<component>/<unique_id>/config`
 - State root: `<state_topic_prefix>/...` (default: `livigy_ups`)
+
+### HA API mode
+
+- Posts state directly to `/api/states/<entity_id>` on Home Assistant.
+- Requires `ha_api.base_url` and `ha_api.token`.
+- These entities are REST-state entities and may not appear with full device registry metadata like MQTT discovery.
 
 ## Entities published
 

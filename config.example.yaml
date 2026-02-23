@@ -3,6 +3,9 @@ ups:
   port: 2001
   timeout_seconds: 2
 
+output:
+  mode: "mqtt" # "mqtt" or "ha_api"
+
 mqtt:
   host: "homeassistant.local"
   port: 1883
@@ -11,6 +14,11 @@ mqtt:
   client_id: "livigy-ups-bridge"
   discovery_prefix: "homeassistant"
   state_topic_prefix: "livigy_ups"
+
+ha_api:
+  base_url: "http://homeassistant.local:8123"
+  token: ""
+  verify_ssl: true
 
 bridge:
   poll_interval_seconds: 15
