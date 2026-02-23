@@ -1,0 +1,19 @@
+ups:
+  host: "192.168.1.50"
+  port: 2001
+  timeout_seconds: 2
+
+mqtt:
+  host: "homeassistant.local"
+  port: 1883
+  username: ""
+  password: ""
+  client_id: "livigy-ups-bridge"
+  discovery_prefix: "homeassistant"
+  state_topic_prefix: "livigy_ups"
+
+bridge:
+  poll_interval_seconds: 15
+  device_name: "Livigy UPS"
+  device_identifier: "livigy_ups_main"
+  manufacturer: "Livigy / PowerShield"
