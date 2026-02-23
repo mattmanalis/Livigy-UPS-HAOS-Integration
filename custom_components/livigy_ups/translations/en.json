@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Livigy UPS",
+        "description": "Connect to your Livigy/PowerShield UPS over TCP serial adapter.",
+        "data": {
+          "host": "Adapter host/IP",
+          "port": "Adapter TCP port",
+          "timeout": "Timeout (seconds)",
+          "scan_interval": "Poll interval (seconds)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Livigy UPS Options",
+        "data": {
+          "timeout": "Timeout (seconds)",
+          "scan_interval": "Poll interval (seconds)"
+        }
+      }
+    }
+  }
+}
