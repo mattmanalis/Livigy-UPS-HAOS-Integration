@@ -34,6 +34,10 @@ views:
             name: Utility Fail
           - entity: binary_sensor.battery_low
             name: Battery Low
+          - entity: binary_sensor.adapter_connected
+            name: Adapter Connected
+          - entity: binary_sensor.ups_responding
+            name: UPS Responding
 
       - type: entities
         title: UPS Identity And Ratings
@@ -51,6 +55,8 @@ views:
         title: UPS Status Bits
         show_header_toggle: false
         entities:
+          - entity: binary_sensor.adapter_connected
+          - entity: binary_sensor.ups_responding
           - entity: binary_sensor.utility_fail
           - entity: binary_sensor.battery_low
           - entity: binary_sensor.avr_active

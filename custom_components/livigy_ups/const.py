@@ -37,6 +37,8 @@ SENSOR_DESCRIPTIONS = {
 }
 
 BINARY_SENSOR_DESCRIPTIONS = {
+    "adapter_connected": "Adapter Connected",
+    "ups_responding": "UPS Responding",
     "utility_fail": "Utility Fail",
     "battery_low": "Battery Low",
     "avr_active": "AVR Active",

@@ -13,6 +13,7 @@ from .entity import LivigyUpsCoordinatorEntity
 PROBLEM_KEYS = {"utility_fail", "battery_low", "ups_failed"}
 RUNNING_KEYS = {"test_in_progress", "shutdown_active"}
 POWER_KEYS = {"avr_active"}
+CONNECTIVITY_KEYS = {"adapter_connected", "ups_responding"}
 
 
 async def async_setup_entry(
@@ -43,6 +44,8 @@ class LivigyUpsBinarySensor(LivigyUpsCoordinatorEntity, BinarySensorEntity):
             self._attr_device_class = BinarySensorDeviceClass.RUNNING
         elif key in POWER_KEYS:
             self._attr_device_class = BinarySensorDeviceClass.POWER
+        elif key in CONNECTIVITY_KEYS:
+            self._attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
 
     @property
     def is_on(self) -> bool | None:

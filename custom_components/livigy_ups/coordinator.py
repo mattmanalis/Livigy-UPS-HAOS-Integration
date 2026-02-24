@@ -9,7 +9,7 @@ from datetime import timedelta
 from typing import Callable
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
 from .parser import parse_f, parse_i, parse_q1
@@ -134,7 +134,16 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         data.update(q1_data)
         data.update(i_data)
         data.update(f_data)
+        data["adapter_connected"] = True
+        data["ups_responding"] = True
         return data
+
+    def _check_adapter_connected(self) -> bool:
+        try:
+            with socket.create_connection((self.host, self.port), timeout=min(2.0, self.timeout)):
+                return True
+        except OSError:
+            return False
 
     def _send_command_once(self, command: str, frames_per_try: int = 6) -> str:
         payloads = [
@@ -173,4 +182,9 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         try:
             return await self.hass.async_add_executor_job(self._poll_once)
         except Exception as err:
-            raise UpdateFailed(f"Failed to poll UPS: {err}") from err
+            adapter_connected = await self.hass.async_add_executor_job(self._check_adapter_connected)
+            data = dict(self.data or {})
+            data["adapter_connected"] = adapter_connected
+            data["ups_responding"] = False
+            _LOGGER.warning("UPS poll failed: %s (adapter_connected=%s)", err, adapter_connected)
+            return data
