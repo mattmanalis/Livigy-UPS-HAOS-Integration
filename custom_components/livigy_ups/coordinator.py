@@ -136,6 +136,39 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         data.update(f_data)
         return data
 
+    def _send_command_once(self, command: str, frames_per_try: int = 6) -> str:
+        payloads = [
+            f"{command}\r".encode("ascii"),
+            f"{command}\r\n".encode("ascii"),
+            f"{command}\n".encode("ascii"),
+        ]
+        with socket.create_connection((self.host, self.port), timeout=self.timeout) as sock:
+            sock.settimeout(self.timeout)
+            self._drain_socket(sock)
+            for payload in payloads:
+                sock.sendall(payload)
+                for _ in range(frames_per_try):
+                    raw = self._read_frame(sock)
+                    if raw:
+                        return raw
+        return ""
+
+    def _send_command_with_retry(self, command: str, retries: int = 3) -> str:
+        last_error: Exception | None = None
+        for attempt in range(1, retries + 1):
+            try:
+                raw = self._send_command_once(command)
+                if raw:
+                    return raw
+                return "NO_RESPONSE"
+            except Exception as err:
+                last_error = err
+                _LOGGER.debug("Command %s transport error attempt %s/%s: %s", command, attempt, retries, err)
+        raise ValueError(f"Failed to send command {command}: {last_error}")
+
+    async def async_send_command(self, command: str) -> str:
+        return await self.hass.async_add_executor_job(self._send_command_with_retry, command)
+
     async def _async_update_data(self) -> dict[str, object]:
         try:
             return await self.hass.async_add_executor_job(self._poll_once)

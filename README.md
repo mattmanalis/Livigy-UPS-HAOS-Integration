@@ -51,3 +51,24 @@ Binary sensors:
 - Test In Progress
 - Shutdown Active
 - Beeper On
+
+## Control services
+
+The integration exposes these Home Assistant services:
+
+- `livigy_ups.toggle_beeper`
+- `livigy_ups.start_battery_test` (`minutes` optional, `until_low` optional)
+- `livigy_ups.cancel_battery_test`
+- `livigy_ups.shutdown` (`delay_minutes` required, `restart_minutes` optional)
+- `livigy_ups.cancel_shutdown`
+- `livigy_ups.send_command` (`command` raw)
+
+If you have multiple Livigy UPS entries, include `entry_id` in service data.
+
+## Dashboard
+
+A ready Lovelace dashboard is included at:
+
+- `dashboards/livigy_ups_dashboard.yaml`
+
+Import it as a manual dashboard (or copy cards into your existing dashboard), then adjust entity IDs if needed.

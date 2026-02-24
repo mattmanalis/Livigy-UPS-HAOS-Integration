@@ -11,6 +11,13 @@ DEFAULT_PORT = 2001
 DEFAULT_TIMEOUT = 5.0
 DEFAULT_SCAN_INTERVAL = 15
 
+SERVICE_SEND_COMMAND = "send_command"
+SERVICE_TOGGLE_BEEPER = "toggle_beeper"
+SERVICE_START_BATTERY_TEST = "start_battery_test"
+SERVICE_CANCEL_BATTERY_TEST = "cancel_battery_test"
+SERVICE_SHUTDOWN = "shutdown"
+SERVICE_CANCEL_SHUTDOWN = "cancel_shutdown"
+
 SENSOR_DESCRIPTIONS = {
     "input_voltage": {"name": "Input Voltage", "native_unit": "V", "device_class": "voltage"},
     "fault_voltage": {"name": "Fault Voltage", "native_unit": "V", "device_class": "voltage"},

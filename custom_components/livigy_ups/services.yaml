@@ -1,0 +1,100 @@
+send_command:
+  name: Send Raw Command
+  description: Send a raw UPS serial command (without line ending).
+  fields:
+    command:
+      name: Command
+      description: Raw command string, for example Q1, I, F, T, CT, Q, S0005, C.
+      required: true
+      example: "Q1"
+      selector:
+        text:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry ID if multiple Livigy UPS entries exist.
+      required: false
+      selector:
+        text:
+
+toggle_beeper:
+  name: Toggle Beeper
+  description: Send Q command to toggle UPS beeper.
+  fields:
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:
+
+start_battery_test:
+  name: Start Battery Test
+  description: Start a battery test (default 10 seconds), or timed, or until low battery.
+  fields:
+    minutes:
+      name: Minutes
+      description: Optional minutes for timed battery test (1-99).
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 99
+          mode: box
+    until_low:
+      name: Until Low
+      description: If true, uses TL command.
+      required: false
+      selector:
+        boolean:
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:
+
+cancel_battery_test:
+  name: Cancel Battery Test
+  description: Send CT command.
+  fields:
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:
+
+shutdown:
+  name: Shutdown UPS
+  description: Send delayed shutdown (and optional restart) command.
+  fields:
+    delay_minutes:
+      name: Delay Minutes
+      description: Delay before shutdown (0-9999).
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 9999
+          mode: box
+    restart_minutes:
+      name: Restart Minutes
+      description: Optional restart delay after shutdown (0-9999).
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 9999
+          mode: box
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:
+
+cancel_shutdown:
+  name: Cancel Shutdown
+  description: Send C command to cancel scheduled shutdown.
+  fields:
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:

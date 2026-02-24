@@ -1,0 +1,165 @@
+title: Livigy UPS
+views:
+  - title: UPS Overview
+    path: livigy-ups
+    icon: mdi:battery-high
+    badges: []
+    cards:
+      - type: markdown
+        content: |
+          # Livigy UPS Dashboard
+          Replace entity IDs below with your actual IDs if names differ.
+          Use Developer Tools -> States to confirm IDs.
+
+      - type: glance
+        title: Live Status
+        columns: 4
+        entities:
+          - entity: sensor.input_voltage
+            name: Input V
+          - entity: sensor.output_voltage
+            name: Output V
+          - entity: sensor.load_percent
+            name: Load %
+          - entity: sensor.battery_voltage
+            name: Battery V
+          - entity: sensor.input_frequency_hz
+            name: Hz
+          - entity: sensor.temperature_c
+            name: Temp
+          - entity: binary_sensor.utility_fail
+            name: Utility Fail
+          - entity: binary_sensor.battery_low
+            name: Battery Low
+
+      - type: entities
+        title: UPS Identity And Ratings
+        show_header_toggle: false
+        entities:
+          - entity: sensor.company
+          - entity: sensor.model
+          - entity: sensor.firmware
+          - entity: sensor.rated_voltage
+          - entity: sensor.rated_current
+          - entity: sensor.rated_battery_voltage
+          - entity: sensor.rated_frequency_hz
+
+      - type: history-graph
+        title: Voltage Trends (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.input_voltage
+            name: Input
+          - entity: sensor.output_voltage
+            name: Output
+          - entity: sensor.battery_voltage
+            name: Battery
+
+      - type: history-graph
+        title: Load And Frequency (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.load_percent
+            name: Load %
+          - entity: sensor.input_frequency_hz
+            name: Input Hz
+
+      - type: history-graph
+        title: Temperature (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.temperature_c
+            name: UPS Temp
+
+      - type: entities
+        title: Control Actions
+        show_header_toggle: false
+        entities:
+          - type: button
+            name: Toggle Beeper
+            icon: mdi:volume-high
+            tap_action:
+              action: call-service
+              service: livigy_ups.toggle_beeper
+
+          - type: button
+            name: Start 10s Battery Test
+            icon: mdi:battery-sync
+            tap_action:
+              action: call-service
+              service: livigy_ups.start_battery_test
+
+          - type: button
+            name: Start 5 Min Battery Test
+            icon: mdi:battery-clock
+            tap_action:
+              action: call-service
+              service: livigy_ups.start_battery_test
+              service_data:
+                minutes: 5
+
+          - type: button
+            name: Start Test Until Low
+            icon: mdi:battery-alert
+            tap_action:
+              action: call-service
+              service: livigy_ups.start_battery_test
+              service_data:
+                until_low: true
+
+          - type: button
+            name: Cancel Battery Test
+            icon: mdi:cancel
+            tap_action:
+              action: call-service
+              service: livigy_ups.cancel_battery_test
+
+          - type: button
+            name: Schedule Shutdown in 5 Min
+            icon: mdi:power
+            tap_action:
+              action: call-service
+              service: livigy_ups.shutdown
+              service_data:
+                delay_minutes: 5
+
+          - type: button
+            name: Cancel Shutdown
+            icon: mdi:power-off
+            tap_action:
+              action: call-service
+              service: livigy_ups.cancel_shutdown
+
+      - type: entities
+        title: Advanced Command Buttons
+        show_header_toggle: false
+        entities:
+          - type: button
+            name: Poll Q1 (Raw)
+            icon: mdi:download-network
+            tap_action:
+              action: call-service
+              service: livigy_ups.send_command
+              service_data:
+                command: Q1
+
+          - type: button
+            name: Poll I (Identity)
+            icon: mdi:identifier
+            tap_action:
+              action: call-service
+              service: livigy_ups.send_command
+              service_data:
+                command: I
+
+          - type: button
+            name: Poll F (Ratings)
+            icon: mdi:format-list-bulleted
+            tap_action:
+              action: call-service
+              service: livigy_ups.send_command
+              service_data:
+                command: F
