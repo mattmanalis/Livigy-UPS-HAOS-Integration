@@ -73,27 +73,31 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         cmd: str,
         parser: Callable[[str], dict[str, object]],
         retries: int = 3,
+        frames_per_try: int = 6,
     ) -> tuple[str, dict[str, object]]:
         payload = f"{cmd}\r".encode("ascii")
         last_error: Exception | None = None
         for attempt in range(1, retries + 1):
             sock.sendall(payload)
-            raw = self._read_frame(sock)
-            if not raw:
-                last_error = ValueError(f"Empty response for {cmd}")
-                continue
-            try:
-                return raw, parser(raw)
-            except Exception as err:
-                last_error = err
-                _LOGGER.debug(
-                    "Unexpected response for %s attempt %s/%s: %r (%s)",
-                    cmd,
-                    attempt,
-                    retries,
-                    raw,
-                    err,
-                )
+            for frame_idx in range(1, frames_per_try + 1):
+                raw = self._read_frame(sock)
+                if not raw:
+                    last_error = ValueError(f"Empty response for {cmd}")
+                    continue
+                try:
+                    return raw, parser(raw)
+                except Exception as err:
+                    last_error = err
+                    _LOGGER.debug(
+                        "Ignoring non-matching frame for %s attempt %s/%s frame %s/%s: %r (%s)",
+                        cmd,
+                        attempt,
+                        retries,
+                        frame_idx,
+                        frames_per_try,
+                        raw,
+                        err,
+                    )
         raise ValueError(f"Failed to parse {cmd} response after {retries} attempts: {last_error}")
 
     def _poll_once(self) -> dict[str, object]:
