@@ -8,8 +8,7 @@ views:
       - type: markdown
         content: |
           # Livigy UPS Dashboard
-          Replace entity IDs below with your actual IDs if names differ.
-          Use Developer Tools -> States to confirm IDs.
+          Entity IDs mapped to your current Livigy UPS entities.
 
       - type: glance
         title: Live Status
@@ -19,16 +18,18 @@ views:
             name: Input V
           - entity: sensor.output_voltage
             name: Output V
-          - entity: sensor.load_percent
+          - entity: sensor.ups_load
             name: Load %
           - entity: sensor.estimated_load_watts
             name: Load W (Est)
           - entity: sensor.battery_voltage
             name: Battery V
-          - entity: sensor.input_frequency_hz
+          - entity: sensor.input_frequency
             name: Hz
-          - entity: sensor.temperature_c
+          - entity: sensor.ups_temperature
             name: Temp
+          - entity: sensor.fault_voltage
+            name: Fault V
           - entity: binary_sensor.utility_fail
             name: Utility Fail
           - entity: binary_sensor.battery_low
@@ -38,13 +39,26 @@ views:
         title: UPS Identity And Ratings
         show_header_toggle: false
         entities:
-          - entity: sensor.company
-          - entity: sensor.model
-          - entity: sensor.firmware
+          - entity: sensor.ups_company
+          - entity: sensor.ups_model
+          - entity: sensor.ups_firmware
           - entity: sensor.rated_voltage
           - entity: sensor.rated_current
           - entity: sensor.rated_battery_voltage
-          - entity: sensor.rated_frequency_hz
+          - entity: sensor.rated_frequency
+
+      - type: entities
+        title: UPS Status Bits
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.utility_fail
+          - entity: binary_sensor.battery_low
+          - entity: binary_sensor.avr_active
+          - entity: binary_sensor.ups_failed
+          - entity: binary_sensor.standby_type
+          - entity: binary_sensor.test_in_progress
+          - entity: binary_sensor.shutdown_active
+          - entity: binary_sensor.beeper_on
 
       - type: grid
         title: Load Gauges
@@ -52,7 +66,7 @@ views:
         square: false
         cards:
           - type: gauge
-            entity: sensor.load_percent
+            entity: sensor.ups_load
             name: Load Percent
             min: 0
             max: 100
@@ -87,6 +101,14 @@ views:
             name: Output Voltage
 
       - type: history-graph
+        title: Fault Voltage (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.fault_voltage
+            name: Fault Voltage
+
+      - type: history-graph
         title: Battery Voltage (24h)
         hours_to_show: 24
         refresh_interval: 60
@@ -99,7 +121,7 @@ views:
         hours_to_show: 24
         refresh_interval: 60
         entities:
-          - entity: sensor.load_percent
+          - entity: sensor.ups_load
             name: Load %
 
       - type: history-graph
@@ -115,7 +137,7 @@ views:
         hours_to_show: 24
         refresh_interval: 60
         entities:
-          - entity: sensor.input_frequency_hz
+          - entity: sensor.input_frequency
             name: Input Hz
 
       - type: history-graph
@@ -123,7 +145,7 @@ views:
         hours_to_show: 24
         refresh_interval: 60
         entities:
-          - entity: sensor.temperature_c
+          - entity: sensor.ups_temperature
             name: UPS Temp
 
       - type: entities
