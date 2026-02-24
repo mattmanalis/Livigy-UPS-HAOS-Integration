@@ -72,62 +72,59 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
     def _exchange_with_retry(
         self,
-        sock: socket.socket,
         cmd: str,
         parser: Callable[[str], dict[str, object]],
-        retries: int = 3,
+        retries: int = 4,
         frames_per_try: int = 6,
     ) -> tuple[str, dict[str, object]]:
-        payload = f"{cmd}\r".encode("ascii")
+        payloads = [
+            f"{cmd}\r".encode("ascii"),
+            f"{cmd}\r\n".encode("ascii"),
+            f"{cmd}\n".encode("ascii"),
+        ]
         last_error: Exception | None = None
         for attempt in range(1, retries + 1):
-            sock.sendall(payload)
-            for frame_idx in range(1, frames_per_try + 1):
-                raw = self._read_frame(sock)
-                if not raw:
-                    last_error = ValueError(f"Empty response for {cmd}")
-                    continue
-                try:
-                    return raw, parser(raw)
-                except Exception as err:
-                    last_error = err
-                    _LOGGER.debug(
-                        "Ignoring non-matching frame for %s attempt %s/%s frame %s/%s: %r (%s)",
-                        cmd,
-                        attempt,
-                        retries,
-                        frame_idx,
-                        frames_per_try,
-                        raw,
-                        err,
-                    )
-        raise ValueError(f"Failed to parse {cmd} response after {retries} attempts: {last_error}")
-
-    def _poll_once(self) -> dict[str, object]:
-        last_error: Exception | None = None
-        for connect_attempt in range(1, 4):
             try:
                 with socket.create_connection((self.host, self.port), timeout=self.timeout) as sock:
                     sock.settimeout(self.timeout)
                     self._drain_socket(sock)
 
-                    _, q1_data = self._exchange_with_retry(sock, "Q1", parse_q1)
-                    _, i_data = self._exchange_with_retry(sock, "I", parse_i)
-                    _, f_data = self._exchange_with_retry(sock, "F", parse_f)
-
-                data: dict[str, object] = {}
-                data.update(q1_data)
-                data.update(i_data)
-                data.update(f_data)
-                return data
+                    for payload in payloads:
+                        sock.sendall(payload)
+                        for frame_idx in range(1, frames_per_try + 1):
+                            raw = self._read_frame(sock)
+                            if not raw:
+                                last_error = ValueError(f"Empty response for {cmd}")
+                                continue
+                            try:
+                                return raw, parser(raw)
+                            except Exception as err:
+                                last_error = err
+                                _LOGGER.debug(
+                                    "Ignoring non-matching frame for %s attempt %s/%s frame %s/%s: %r (%s)",
+                                    cmd,
+                                    attempt,
+                                    retries,
+                                    frame_idx,
+                                    frames_per_try,
+                                    raw,
+                                    err,
+                                )
             except Exception as err:
                 last_error = err
-                _LOGGER.debug(
-                    "Poll attempt %s/3 failed, retrying with new TCP connection: %s",
-                    connect_attempt,
-                    err,
-                )
-        raise ValueError(f"Polling failed after 3 connection attempts: {last_error}")
+                _LOGGER.debug("Transport error for %s attempt %s/%s: %s", cmd, attempt, retries, err)
+        raise ValueError(f"Failed to parse {cmd} response after {retries} attempts: {last_error}")
+
+    def _poll_once(self) -> dict[str, object]:
+        _, q1_data = self._exchange_with_retry("Q1", parse_q1)
+        _, i_data = self._exchange_with_retry("I", parse_i)
+        _, f_data = self._exchange_with_retry("F", parse_f)
+
+        data: dict[str, object] = {}
+        data.update(q1_data)
+        data.update(i_data)
+        data.update(f_data)
+        return data
 
     async def _async_update_data(self) -> dict[str, object]:
         try:
