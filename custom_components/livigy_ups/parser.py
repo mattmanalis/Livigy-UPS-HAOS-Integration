@@ -70,7 +70,7 @@ def parse_i(raw: str) -> dict[str, object]:
 
 
 def parse_f(raw: str) -> dict[str, object]:
-    payload = _strip_wrapping(raw)
+    payload = _strip_wrapping(raw).lstrip("#").strip()
     parts = payload.split()
     if len(parts) < 4:
         raise ValueError(f"Invalid F response: {raw!r}")

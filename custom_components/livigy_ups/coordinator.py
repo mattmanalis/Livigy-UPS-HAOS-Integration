@@ -117,8 +117,18 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
     def _poll_once(self) -> dict[str, object]:
         _, q1_data = self._exchange_with_retry("Q1", parse_q1)
-        _, i_data = self._exchange_with_retry("I", parse_i)
-        _, f_data = self._exchange_with_retry("F", parse_f)
+        i_data: dict[str, object] = {}
+        f_data: dict[str, object] = {}
+
+        try:
+            _, i_data = self._exchange_with_retry("I", parse_i)
+        except Exception as err:
+            _LOGGER.debug("Optional I poll failed: %s", err)
+
+        try:
+            _, f_data = self._exchange_with_retry("F", parse_f)
+        except Exception as err:
+            _LOGGER.debug("Optional F poll failed: %s", err)
 
         data: dict[str, object] = {}
         data.update(q1_data)
