@@ -57,7 +57,16 @@ def _build_test_command(minutes: int | None, until_low: bool) -> str:
     return "T"
 
 
-def _build_shutdown_command(delay_minutes: int, restart_minutes: int | None) -> str:
+def _build_shutdown_command(delay_minutes: int, restart_minutes: int | None, protocol_family: str) -> str:
+    if protocol_family == "centurion":
+        if delay_minutes < 0 or delay_minutes > 99:
+            raise vol.Invalid("delay_minutes must be between 0 and 99 for Centurion protocol")
+        if restart_minutes is None:
+            return f"S{delay_minutes:02d}"
+        if restart_minutes < 0 or restart_minutes > 9999:
+            raise vol.Invalid("restart_minutes must be between 0 and 9999")
+        return f"S{delay_minutes:02d}R{restart_minutes:04d}"
+
     if delay_minutes < 0 or delay_minutes > 9999:
         raise vol.Invalid("delay_minutes must be between 0 and 9999")
     if restart_minutes is None:
@@ -125,8 +134,14 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def async_toggle_beeper(call: ServiceCall) -> None:
         coordinator = _get_target_coordinator(hass, call)
-        raw = await coordinator.async_send_command("Q")
-        _LOGGER.info("Sent command Q (toggle beeper), response=%s", raw)
+        protocol = str((coordinator.data or {}).get("protocol_family", ""))
+        if protocol == "centurion":
+            beeper_on = bool((coordinator.data or {}).get("beeper_on"))
+            command = "BZOFF" if beeper_on else "BZON"
+        else:
+            command = "Q"
+        raw = await coordinator.async_send_command(command)
+        _LOGGER.info("Sent command %s (toggle beeper), response=%s", command, raw)
         await coordinator.async_request_refresh()
 
     async def async_start_battery_test(call: ServiceCall) -> None:
@@ -144,15 +159,18 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def async_shutdown(call: ServiceCall) -> None:
         coordinator = _get_target_coordinator(hass, call)
-        command = _build_shutdown_command(call.data["delay_minutes"], call.data.get("restart_minutes"))
+        protocol = str((coordinator.data or {}).get("protocol_family", ""))
+        command = _build_shutdown_command(call.data["delay_minutes"], call.data.get("restart_minutes"), protocol)
         raw = await coordinator.async_send_command(command)
         _LOGGER.info("Sent command %s (shutdown), response=%s", command, raw)
         await coordinator.async_request_refresh()
 
     async def async_cancel_shutdown(call: ServiceCall) -> None:
         coordinator = _get_target_coordinator(hass, call)
-        raw = await coordinator.async_send_command("C")
-        _LOGGER.info("Sent command C (cancel shutdown), response=%s", raw)
+        protocol = str((coordinator.data or {}).get("protocol_family", ""))
+        command = "CS" if protocol == "centurion" else "C"
+        raw = await coordinator.async_send_command(command)
+        _LOGGER.info("Sent command %s (cancel shutdown), response=%s", command, raw)
         await coordinator.async_request_refresh()
 
     hass.services.async_register(DOMAIN, SERVICE_SEND_COMMAND, async_send_command, schema=send_command_schema)

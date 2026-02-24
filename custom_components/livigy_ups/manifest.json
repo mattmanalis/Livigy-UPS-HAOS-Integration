@@ -1,7 +1,7 @@
 {
   "domain": "livigy_ups",
   "name": "Livigy UPS",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "documentation": "https://github.com/mattmanalis/Livigy-UPS-HAOS-Integration",
   "issue_tracker": "https://github.com/mattmanalis/Livigy-UPS-HAOS-Integration/issues",
   "codeowners": [

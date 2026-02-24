@@ -14,13 +14,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
-from .parser import parse_f, parse_i, parse_q1
+from .parser import parse_f, parse_i, parse_q1, parse_qgs, parse_qmd, parse_qmod, parse_qri, parse_qvfw
 
 _LOGGER = logging.getLogger(DOMAIN)
 
 
 class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
-    """Fetches UPS data from Megatec/Q1 over TCP-serial adapter."""
+    """Fetches UPS data over TCP-serial adapter (Centurion or Megatec)."""
 
     def __init__(
         self,
@@ -138,24 +138,62 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         raise ValueError(f"Failed to parse {cmd} response after {retries} attempts: {last_error}")
 
     def _poll_once(self) -> dict[str, object]:
-        _, q1_data = self._exchange_with_retry("Q1", parse_q1)
-        i_data: dict[str, object] = {}
-        f_data: dict[str, object] = {}
+        qgs_err: Exception | None = None
+        q1_err: Exception | None = None
+        live_data: dict[str, object] | None = None
 
         try:
-            _, i_data = self._exchange_with_retry("I", parse_i)
+            _, live_data = self._exchange_with_retry("QGS", parse_qgs)
         except Exception as err:
-            _LOGGER.debug("Optional I poll failed: %s", err)
+            qgs_err = err
+            _LOGGER.debug("QGS poll failed, falling back to Q1: %s", err)
 
-        try:
-            _, f_data = self._exchange_with_retry("F", parse_f)
-        except Exception as err:
-            _LOGGER.debug("Optional F poll failed: %s", err)
+        if live_data is None:
+            try:
+                _, live_data = self._exchange_with_retry("Q1", parse_q1)
+            except Exception as err:
+                q1_err = err
+                raise ValueError(f"QGS failed ({qgs_err}); Q1 failed ({q1_err})") from err
+
+        protocol = str(live_data.get("protocol_family", "unknown"))
+        identity_data: dict[str, object] = {}
+        ratings_data: dict[str, object] = {}
+        mode_data: dict[str, object] = {}
+        firmware_data: dict[str, object] = {}
+
+        if protocol == "centurion":
+            try:
+                _, identity_data = self._exchange_with_retry("QMD", parse_qmd)
+            except Exception as err:
+                _LOGGER.debug("Optional QMD poll failed: %s", err)
+            try:
+                _, ratings_data = self._exchange_with_retry("QRI", parse_qri)
+            except Exception as err:
+                _LOGGER.debug("Optional QRI poll failed: %s", err)
+            try:
+                _, mode_data = self._exchange_with_retry("QMOD", parse_qmod)
+            except Exception as err:
+                _LOGGER.debug("Optional QMOD poll failed: %s", err)
+            try:
+                _, firmware_data = self._exchange_with_retry("QVFW", parse_qvfw)
+            except Exception as err:
+                _LOGGER.debug("Optional QVFW poll failed: %s", err)
+        else:
+            try:
+                _, identity_data = self._exchange_with_retry("I", parse_i)
+            except Exception as err:
+                _LOGGER.debug("Optional I poll failed: %s", err)
+            try:
+                _, ratings_data = self._exchange_with_retry("F", parse_f)
+            except Exception as err:
+                _LOGGER.debug("Optional F poll failed: %s", err)
 
         data: dict[str, object] = {}
-        data.update(q1_data)
-        data.update(i_data)
-        data.update(f_data)
+        data.update(live_data)
+        data.update(identity_data)
+        data.update(ratings_data)
+        data.update(mode_data)
+        data.update(firmware_data)
         data["adapter_connected"] = True
         data["ups_responding"] = True
         return data

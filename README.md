@@ -1,6 +1,6 @@
 # Livigy UPS HAOS Integration
 
-Home Assistant custom integration for Livigy UPS units (rebadged PowerShield) that support Megatec/Q1 serial protocol via an IP-to-serial adapter.
+Home Assistant custom integration for Livigy UPS units (rebadged PowerShield) via an IP-to-serial adapter.
 
 ## HACS install
 
@@ -27,9 +27,11 @@ Home Assistant custom integration for Livigy UPS units (rebadged PowerShield) th
 
 ## Protocol
 
-- Commands used: `Q1`, `I`, `F`
+- Auto-detects protocol family:
+- Centurion protocol first: `QGS`, `QMD`, `QRI`, `QMOD`, `QVFW`
+- Legacy Megatec fallback: `Q1`, `I`, `F`
 - Command terminator: `\r`
-- Typical serial side settings on the adapter: `2400 8N1`
+- Typical serial side settings on adapter serial side: `2400 8N1`
 
 ## Exposed entities
 
@@ -44,10 +46,14 @@ Sensors:
 - UPS Company
 - UPS Model
 - UPS Firmware
+- UPS Mode
+- UPS Topology
+- UPS Protocol
 - Rated Voltage
 - Rated Current
 - Rated Battery Voltage
 - Rated Frequency
+- Rated Watts
 
 Binary sensors:
 - Utility Fail
@@ -63,11 +69,11 @@ Binary sensors:
 
 The integration exposes these Home Assistant services:
 
-- `livigy_ups.toggle_beeper`
+- `livigy_ups.toggle_beeper` (uses `BZON/BZOFF` on Centurion, `Q` on legacy)
 - `livigy_ups.start_battery_test` (`minutes` optional, `until_low` optional)
 - `livigy_ups.cancel_battery_test`
 - `livigy_ups.shutdown` (`delay_minutes` required, `restart_minutes` optional)
-- `livigy_ups.cancel_shutdown`
+- `livigy_ups.cancel_shutdown` (uses `CS` on Centurion, `C` on legacy)
 - `livigy_ups.send_command` (`command` raw)
 
 If you have multiple Livigy UPS entries, include `entry_id` in service data.

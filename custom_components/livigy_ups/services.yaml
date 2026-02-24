@@ -4,7 +4,7 @@ send_command:
   fields:
     command:
       name: Command
-      description: Raw command string, for example Q1, I, F, T, CT, Q, S0005, C.
+      description: Raw command string, for example QGS, QMD, QRI, T, CT, BZON, BZOFF, S05, CS.
       required: true
       example: "Q1"
       selector:
@@ -18,7 +18,7 @@ send_command:
 
 toggle_beeper:
   name: Toggle Beeper
-  description: Send Q command to toggle UPS beeper.
+  description: Toggle UPS beeper. Uses BZON/BZOFF for Centurion and Q for legacy units.
   fields:
     entry_id:
       name: Entry ID
@@ -91,7 +91,7 @@ shutdown:
 
 cancel_shutdown:
   name: Cancel Shutdown
-  description: Send C command to cancel scheduled shutdown.
+  description: Cancel scheduled shutdown. Uses CS for Centurion and C for legacy units.
   fields:
     entry_id:
       name: Entry ID

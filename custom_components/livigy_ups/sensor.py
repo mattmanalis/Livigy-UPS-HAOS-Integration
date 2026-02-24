@@ -26,6 +26,7 @@ UNIT_MAP = {
     "W": UnitOfPower.WATT,
     "°C": UnitOfTemperature.CELSIUS,
 }
+TEXT_SENSOR_KEYS = {"company", "model", "firmware", "ups_mode", "ups_topology", "protocol_family"}
 
 
 async def async_setup_entry(
@@ -58,7 +59,7 @@ class LivigyUpsSensor(LivigyUpsCoordinatorEntity, SensorEntity):
         if device_class:
             self._attr_device_class = SensorDeviceClass(device_class)
 
-        if key not in {"company", "model", "firmware"}:
+        if key not in TEXT_SENSOR_KEYS:
             self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
@@ -66,12 +67,18 @@ class LivigyUpsSensor(LivigyUpsCoordinatorEntity, SensorEntity):
         data = self.coordinator.data or {}
         if self._key == "estimated_load_watts":
             load_percent = data.get("load_percent")
-            rated_voltage = data.get("rated_voltage")
-            rated_current = data.get("rated_current")
-            if load_percent is None or rated_voltage is None or rated_current is None:
+            rated_watts = data.get("rated_watts")
+            if load_percent is None:
                 return None
             try:
-                # Approximation based on apparent rated power and load percent.
+                if rated_watts is not None:
+                    return round(float(rated_watts) * float(load_percent) / 100.0, 1)
+
+                rated_voltage = data.get("rated_voltage")
+                rated_current = data.get("rated_current")
+                if rated_voltage is None or rated_current is None:
+                    return None
+                # Fallback approximation based on apparent rated power and load percent.
                 return round(float(rated_voltage) * float(rated_current) * float(load_percent) / 100.0, 1)
             except (TypeError, ValueError):
                 return None
