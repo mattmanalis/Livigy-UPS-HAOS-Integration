@@ -55,4 +55,4 @@ class LivigyUpsSensor(LivigyUpsCoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        return self.coordinator.data.get(self._key)
+        return (self.coordinator.data or {}).get(self._key)

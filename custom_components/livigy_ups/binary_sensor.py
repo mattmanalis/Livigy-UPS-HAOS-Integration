@@ -45,5 +45,8 @@ class LivigyUpsBinarySensor(LivigyUpsCoordinatorEntity, BinarySensorEntity):
             self._attr_device_class = BinarySensorDeviceClass.POWER
 
     @property
-    def is_on(self) -> bool:
-        return bool(self.coordinator.data.get(self._key))
+    def is_on(self) -> bool | None:
+        value = (self.coordinator.data or {}).get(self._key)
+        if value is None:
+            return None
+        return bool(value)

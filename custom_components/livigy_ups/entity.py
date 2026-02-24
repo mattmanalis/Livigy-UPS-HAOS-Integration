@@ -18,11 +18,12 @@ class LivigyUpsCoordinatorEntity(CoordinatorEntity[LivigyUpsCoordinator]):
 
     @property
     def device_info(self) -> DeviceInfo:
+        data = self.coordinator.data or {}
         return DeviceInfo(
             identifiers={("livigy_ups", self._entry_id)},
             name="Livigy UPS",
-            manufacturer=str(self.coordinator.data.get("company") or "Livigy / PowerShield"),
-            model=str(self.coordinator.data.get("model") or "Unknown"),
-            sw_version=str(self.coordinator.data.get("firmware") or "Unknown"),
+            manufacturer=str(data.get("company") or "Livigy / PowerShield"),
+            model=str(data.get("model") or "Unknown"),
+            sw_version=str(data.get("firmware") or "Unknown"),
             configuration_url=f"http://{self._host}",
         )
