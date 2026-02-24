@@ -15,8 +15,15 @@ Home Assistant custom integration for Livigy UPS units (rebadged PowerShield) th
 
 - `Adapter host/IP`: IP of your TCP serial adapter
 - `Adapter TCP port`: usually `2001` (depends on adapter)
-- `Timeout (seconds)`: socket timeout, default `2`
+- `Timeout (seconds)`: socket timeout, default `5`
 - `Poll interval (seconds)`: default `15`
+- `Site ID`: required tag for central reporting
+- `Unit/Residence ID`: required tag for central reporting
+- `Enable InfluxDB export`: enable/disable writes to InfluxDB
+- `InfluxDB URL`: e.g. `https://influx.example.com`
+- `InfluxDB org`, `InfluxDB bucket`, `InfluxDB token`
+- `Verify InfluxDB SSL certificate`
+- `InfluxDB measurement`: default `livigy_ups`
 
 ## Protocol
 

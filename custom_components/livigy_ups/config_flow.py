@@ -12,9 +12,21 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
     CONF_HOST,
+    CONF_INFLUX_BUCKET,
+    CONF_INFLUX_ENABLED,
+    CONF_INFLUX_MEASUREMENT,
+    CONF_INFLUX_ORG,
+    CONF_INFLUX_TOKEN,
+    CONF_INFLUX_URL,
+    CONF_INFLUX_VERIFY_SSL,
     CONF_PORT,
     CONF_SCAN_INTERVAL,
+    CONF_SITE_ID,
     CONF_TIMEOUT,
+    CONF_UNIT_ID,
+    DEFAULT_INFLUX_ENABLED,
+    DEFAULT_INFLUX_MEASUREMENT,
+    DEFAULT_INFLUX_VERIFY_SSL,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_TIMEOUT,
@@ -65,6 +77,15 @@ class LivigyUpsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
                 vol.Required(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): vol.Coerce(float),
                 vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+                vol.Required(CONF_SITE_ID): str,
+                vol.Required(CONF_UNIT_ID): str,
+                vol.Required(CONF_INFLUX_ENABLED, default=DEFAULT_INFLUX_ENABLED): bool,
+                vol.Optional(CONF_INFLUX_URL, default=""): str,
+                vol.Optional(CONF_INFLUX_ORG, default=""): str,
+                vol.Optional(CONF_INFLUX_BUCKET, default=""): str,
+                vol.Optional(CONF_INFLUX_TOKEN, default=""): str,
+                vol.Required(CONF_INFLUX_VERIFY_SSL, default=DEFAULT_INFLUX_VERIFY_SSL): bool,
+                vol.Required(CONF_INFLUX_MEASUREMENT, default=DEFAULT_INFLUX_MEASUREMENT): str,
             }
         )
 
@@ -96,6 +117,54 @@ class LivigyUpsOptionsFlow(config_entries.OptionsFlow):
                         self.config_entry.data[CONF_SCAN_INTERVAL],
                     ),
                 ): int,
+                vol.Required(
+                    CONF_SITE_ID,
+                    default=self.config_entry.options.get(CONF_SITE_ID, self.config_entry.data.get(CONF_SITE_ID, "")),
+                ): str,
+                vol.Required(
+                    CONF_UNIT_ID,
+                    default=self.config_entry.options.get(CONF_UNIT_ID, self.config_entry.data.get(CONF_UNIT_ID, "")),
+                ): str,
+                vol.Required(
+                    CONF_INFLUX_ENABLED,
+                    default=self.config_entry.options.get(
+                        CONF_INFLUX_ENABLED,
+                        self.config_entry.data.get(CONF_INFLUX_ENABLED, DEFAULT_INFLUX_ENABLED),
+                    ),
+                ): bool,
+                vol.Optional(
+                    CONF_INFLUX_URL,
+                    default=self.config_entry.options.get(CONF_INFLUX_URL, self.config_entry.data.get(CONF_INFLUX_URL, "")),
+                ): str,
+                vol.Optional(
+                    CONF_INFLUX_ORG,
+                    default=self.config_entry.options.get(CONF_INFLUX_ORG, self.config_entry.data.get(CONF_INFLUX_ORG, "")),
+                ): str,
+                vol.Optional(
+                    CONF_INFLUX_BUCKET,
+                    default=self.config_entry.options.get(
+                        CONF_INFLUX_BUCKET,
+                        self.config_entry.data.get(CONF_INFLUX_BUCKET, ""),
+                    ),
+                ): str,
+                vol.Optional(
+                    CONF_INFLUX_TOKEN,
+                    default=self.config_entry.options.get(CONF_INFLUX_TOKEN, self.config_entry.data.get(CONF_INFLUX_TOKEN, "")),
+                ): str,
+                vol.Required(
+                    CONF_INFLUX_VERIFY_SSL,
+                    default=self.config_entry.options.get(
+                        CONF_INFLUX_VERIFY_SSL,
+                        self.config_entry.data.get(CONF_INFLUX_VERIFY_SSL, DEFAULT_INFLUX_VERIFY_SSL),
+                    ),
+                ): bool,
+                vol.Required(
+                    CONF_INFLUX_MEASUREMENT,
+                    default=self.config_entry.options.get(
+                        CONF_INFLUX_MEASUREMENT,
+                        self.config_entry.data.get(CONF_INFLUX_MEASUREMENT, DEFAULT_INFLUX_MEASUREMENT),
+                    ),
+                ): str,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

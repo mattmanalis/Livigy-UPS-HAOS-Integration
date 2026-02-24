@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 import socket
+import ssl
 import time
+from urllib import parse, request
 from datetime import timedelta
 from typing import Callable
 
@@ -27,6 +29,16 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         port: int,
         timeout: float,
         scan_interval: int,
+        site_id: str,
+        unit_id: str,
+        entry_id: str,
+        influx_enabled: bool,
+        influx_url: str,
+        influx_org: str,
+        influx_bucket: str,
+        influx_token: str,
+        influx_verify_ssl: bool,
+        influx_measurement: str,
     ) -> None:
         super().__init__(
             hass,
@@ -37,6 +49,16 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.host = host
         self.port = port
         self.timeout = timeout
+        self.site_id = site_id
+        self.unit_id = unit_id
+        self.entry_id = entry_id
+        self.influx_enabled = influx_enabled
+        self.influx_url = influx_url.rstrip("/")
+        self.influx_org = influx_org
+        self.influx_bucket = influx_bucket
+        self.influx_token = influx_token
+        self.influx_verify_ssl = influx_verify_ssl
+        self.influx_measurement = influx_measurement
 
     def _drain_socket(self, sock: socket.socket) -> None:
         """Drain any stale bytes the adapter may send on connect."""
@@ -178,13 +200,75 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
     async def async_send_command(self, command: str) -> str:
         return await self.hass.async_add_executor_job(self._send_command_with_retry, command)
 
+    @staticmethod
+    def _escape_tag(value: str) -> str:
+        return value.replace("\\", "\\\\").replace(",", "\\,").replace(" ", "\\ ").replace("=", "\\=")
+
+    @staticmethod
+    def _escape_field_string(value: str) -> str:
+        return value.replace("\\", "\\\\").replace('"', '\\"')
+
+    def _to_line_protocol(self, data: dict[str, object]) -> str:
+        tags = {
+            "site_id": self.site_id or "unknown",
+            "unit_id": self.unit_id or "unknown",
+            "entry_id": self.entry_id,
+            "host": self.host,
+        }
+        tag_part = ",".join(f"{k}={self._escape_tag(str(v))}" for k, v in tags.items())
+
+        field_tokens: list[str] = []
+        for key, value in data.items():
+            if value is None:
+                continue
+            if isinstance(value, bool):
+                field_tokens.append(f"{key}={'true' if value else 'false'}")
+            elif isinstance(value, int):
+                field_tokens.append(f"{key}={value}i")
+            elif isinstance(value, float):
+                field_tokens.append(f"{key}={value}")
+            else:
+                field_tokens.append(f'{key}="{self._escape_field_string(str(value))}"')
+        if not field_tokens:
+            return ""
+        return f"{self.influx_measurement},{tag_part} " + ",".join(field_tokens)
+
+    def _write_influx(self, data: dict[str, object]) -> None:
+        if not self.influx_enabled:
+            return
+        if not (self.influx_url and self.influx_org and self.influx_bucket and self.influx_token):
+            _LOGGER.debug("Influx export enabled but config is incomplete; skipping write")
+            return
+
+        line = self._to_line_protocol(data)
+        if not line:
+            return
+
+        query = parse.urlencode({"org": self.influx_org, "bucket": self.influx_bucket, "precision": "s"})
+        url = f"{self.influx_url}/api/v2/write?{query}"
+        req = request.Request(
+            url=url,
+            data=line.encode("utf-8"),
+            method="POST",
+            headers={
+                "Authorization": f"Token {self.influx_token}",
+                "Content-Type": "text/plain; charset=utf-8",
+            },
+        )
+        context = ssl.create_default_context() if self.influx_verify_ssl else ssl._create_unverified_context()  # noqa: SLF001
+        with request.urlopen(req, timeout=10, context=context):
+            pass
+
     async def _async_update_data(self) -> dict[str, object]:
         try:
-            return await self.hass.async_add_executor_job(self._poll_once)
+            data = await self.hass.async_add_executor_job(self._poll_once)
+            await self.hass.async_add_executor_job(self._write_influx, data)
+            return data
         except Exception as err:
             adapter_connected = await self.hass.async_add_executor_job(self._check_adapter_connected)
             data = dict(self.data or {})
             data["adapter_connected"] = adapter_connected
             data["ups_responding"] = False
             _LOGGER.warning("UPS poll failed: %s (adapter_connected=%s)", err, adapter_connected)
+            await self.hass.async_add_executor_job(self._write_influx, data)
             return data

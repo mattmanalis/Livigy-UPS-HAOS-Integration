@@ -8,7 +8,16 @@
           "host": "Adapter host/IP",
           "port": "Adapter TCP port",
           "timeout": "Timeout (seconds)",
-          "scan_interval": "Poll interval (seconds)"
+          "scan_interval": "Poll interval (seconds)",
+          "site_id": "Site ID",
+          "unit_id": "Unit/Residence ID",
+          "influx_enabled": "Enable InfluxDB export",
+          "influx_url": "InfluxDB URL (e.g. https://influx.example.com)",
+          "influx_org": "InfluxDB org",
+          "influx_bucket": "InfluxDB bucket",
+          "influx_token": "InfluxDB token",
+          "influx_verify_ssl": "Verify InfluxDB SSL certificate",
+          "influx_measurement": "InfluxDB measurement"
         }
       }
     }
@@ -19,7 +28,16 @@
         "title": "Livigy UPS Options",
         "data": {
           "timeout": "Timeout (seconds)",
-          "scan_interval": "Poll interval (seconds)"
+          "scan_interval": "Poll interval (seconds)",
+          "site_id": "Site ID",
+          "unit_id": "Unit/Residence ID",
+          "influx_enabled": "Enable InfluxDB export",
+          "influx_url": "InfluxDB URL",
+          "influx_org": "InfluxDB org",
+          "influx_bucket": "InfluxDB bucket",
+          "influx_token": "InfluxDB token",
+          "influx_verify_ssl": "Verify InfluxDB SSL certificate",
+          "influx_measurement": "InfluxDB measurement"
         }
       }
     }

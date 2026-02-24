@@ -12,6 +12,15 @@ from homeassistant.core import HomeAssistant, ServiceCall
 
 from .const import CONF_HOST, CONF_PORT, CONF_SCAN_INTERVAL, CONF_TIMEOUT, DOMAIN
 from .const import (
+    CONF_INFLUX_BUCKET,
+    CONF_INFLUX_ENABLED,
+    CONF_INFLUX_MEASUREMENT,
+    CONF_INFLUX_ORG,
+    CONF_INFLUX_TOKEN,
+    CONF_INFLUX_URL,
+    CONF_INFLUX_VERIFY_SSL,
+    CONF_SITE_ID,
+    CONF_UNIT_ID,
     SERVICE_CANCEL_BATTERY_TEST,
     SERVICE_CANCEL_SHUTDOWN,
     SERVICE_SEND_COMMAND,
@@ -182,8 +191,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     port = entry.data[CONF_PORT]
     timeout = entry.options.get(CONF_TIMEOUT, entry.data[CONF_TIMEOUT])
     scan_interval = entry.options.get(CONF_SCAN_INTERVAL, entry.data[CONF_SCAN_INTERVAL])
+    site_id = str(entry.options.get(CONF_SITE_ID, entry.data.get(CONF_SITE_ID, ""))).strip()
+    unit_id = str(entry.options.get(CONF_UNIT_ID, entry.data.get(CONF_UNIT_ID, ""))).strip()
+    influx_enabled = bool(entry.options.get(CONF_INFLUX_ENABLED, entry.data.get(CONF_INFLUX_ENABLED, False)))
+    influx_url = str(entry.options.get(CONF_INFLUX_URL, entry.data.get(CONF_INFLUX_URL, ""))).strip()
+    influx_org = str(entry.options.get(CONF_INFLUX_ORG, entry.data.get(CONF_INFLUX_ORG, ""))).strip()
+    influx_bucket = str(entry.options.get(CONF_INFLUX_BUCKET, entry.data.get(CONF_INFLUX_BUCKET, ""))).strip()
+    influx_token = str(entry.options.get(CONF_INFLUX_TOKEN, entry.data.get(CONF_INFLUX_TOKEN, ""))).strip()
+    influx_verify_ssl = bool(
+        entry.options.get(CONF_INFLUX_VERIFY_SSL, entry.data.get(CONF_INFLUX_VERIFY_SSL, True))
+    )
+    influx_measurement = str(
+        entry.options.get(CONF_INFLUX_MEASUREMENT, entry.data.get(CONF_INFLUX_MEASUREMENT, "livigy_ups"))
+    ).strip() or "livigy_ups"
 
-    coordinator = LivigyUpsCoordinator(hass, host, port, timeout, scan_interval)
+    coordinator = LivigyUpsCoordinator(
+        hass=hass,
+        host=host,
+        port=port,
+        timeout=timeout,
+        scan_interval=scan_interval,
+        site_id=site_id,
+        unit_id=unit_id,
+        entry_id=entry.entry_id,
+        influx_enabled=influx_enabled,
+        influx_url=influx_url,
+        influx_org=influx_org,
+        influx_bucket=influx_bucket,
+        influx_token=influx_token,
+        influx_verify_ssl=influx_verify_ssl,
+        influx_measurement=influx_measurement,
+    )
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     _register_services(hass)
 

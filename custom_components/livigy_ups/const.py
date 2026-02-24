@@ -6,10 +6,22 @@ CONF_HOST = "host"
 CONF_PORT = "port"
 CONF_TIMEOUT = "timeout"
 CONF_SCAN_INTERVAL = "scan_interval"
+CONF_SITE_ID = "site_id"
+CONF_UNIT_ID = "unit_id"
+CONF_INFLUX_ENABLED = "influx_enabled"
+CONF_INFLUX_URL = "influx_url"
+CONF_INFLUX_ORG = "influx_org"
+CONF_INFLUX_BUCKET = "influx_bucket"
+CONF_INFLUX_TOKEN = "influx_token"
+CONF_INFLUX_VERIFY_SSL = "influx_verify_ssl"
+CONF_INFLUX_MEASUREMENT = "influx_measurement"
 
 DEFAULT_PORT = 2001
 DEFAULT_TIMEOUT = 5.0
 DEFAULT_SCAN_INTERVAL = 15
+DEFAULT_INFLUX_ENABLED = False
+DEFAULT_INFLUX_VERIFY_SSL = True
+DEFAULT_INFLUX_MEASUREMENT = "livigy_ups"
 
 SERVICE_SEND_COMMAND = "send_command"
 SERVICE_TOGGLE_BEEPER = "toggle_beeper"
