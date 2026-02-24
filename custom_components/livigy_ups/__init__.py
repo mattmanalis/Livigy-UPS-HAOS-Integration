@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import urlsplit
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -16,8 +17,24 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 
+def _normalize_host(value: str) -> str:
+    host = value.strip()
+    if "://" in host:
+        parsed = urlsplit(host)
+        host = parsed.hostname or host
+    if host.startswith("[") and host.endswith("]"):
+        host = host[1:-1]
+    if host.count(":") == 1 and host.rsplit(":", 1)[1].isdigit():
+        host = host.rsplit(":", 1)[0]
+    return host.strip()
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    host = entry.data[CONF_HOST]
+    host = _normalize_host(str(entry.data[CONF_HOST]))
+    if host != entry.data[CONF_HOST]:
+        data = dict(entry.data)
+        data[CONF_HOST] = host
+        hass.config_entries.async_update_entry(entry, data=data)
     port = entry.data[CONF_PORT]
     timeout = entry.options.get(CONF_TIMEOUT, entry.data[CONF_TIMEOUT])
     scan_interval = entry.options.get(CONF_SCAN_INTERVAL, entry.data[CONF_SCAN_INTERVAL])

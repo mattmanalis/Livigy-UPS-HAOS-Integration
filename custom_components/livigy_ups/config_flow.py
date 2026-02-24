@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -20,6 +22,18 @@ from .const import (
 )
 
 
+def _normalize_host(value: str) -> str:
+    host = value.strip()
+    if "://" in host:
+        parsed = urlsplit(host)
+        host = parsed.hostname or host
+    if host.startswith("[") and host.endswith("]"):
+        host = host[1:-1]
+    if host.count(":") == 1 and host.rsplit(":", 1)[1].isdigit():
+        host = host.rsplit(":", 1)[0]
+    return host.strip()
+
+
 class LivigyUpsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Livigy UPS."""
 
@@ -29,6 +43,18 @@ class LivigyUpsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            user_input[CONF_HOST] = _normalize_host(str(user_input[CONF_HOST]))
+            if not user_input[CONF_HOST]:
+                errors["base"] = "invalid_host"
+                schema = vol.Schema(
+                    {
+                        vol.Required(CONF_HOST): str,
+                        vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+                        vol.Required(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): vol.Coerce(float),
+                        vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+                    }
+                )
+                return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
             await self.async_set_unique_id(f"{user_input[CONF_HOST]}:{user_input[CONF_PORT]}")
             self._abort_if_unique_id_configured()
             return self.async_create_entry(title=f"Livigy UPS ({user_input[CONF_HOST]})", data=user_input)
