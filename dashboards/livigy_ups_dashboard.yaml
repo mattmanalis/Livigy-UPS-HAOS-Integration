@@ -21,6 +21,8 @@ views:
             name: Output V
           - entity: sensor.load_percent
             name: Load %
+          - entity: sensor.estimated_load_watts
+            name: Load W (Est)
           - entity: sensor.battery_voltage
             name: Battery V
           - entity: sensor.input_frequency_hz
@@ -44,25 +46,75 @@ views:
           - entity: sensor.rated_battery_voltage
           - entity: sensor.rated_frequency_hz
 
+      - type: grid
+        title: Load Gauges
+        columns: 2
+        square: false
+        cards:
+          - type: gauge
+            entity: sensor.load_percent
+            name: Load Percent
+            min: 0
+            max: 100
+            severity:
+              green: 0
+              yellow: 60
+              red: 85
+          - type: gauge
+            entity: sensor.estimated_load_watts
+            name: Load Watts (Estimated)
+            min: 0
+            max: 2500
+            severity:
+              green: 0
+              yellow: 1200
+              red: 1800
+
       - type: history-graph
-        title: Voltage Trends (24h)
+        title: Input Voltage (24h)
         hours_to_show: 24
         refresh_interval: 60
         entities:
           - entity: sensor.input_voltage
-            name: Input
-          - entity: sensor.output_voltage
-            name: Output
-          - entity: sensor.battery_voltage
-            name: Battery
+            name: Input Voltage
 
       - type: history-graph
-        title: Load And Frequency (24h)
+        title: Output Voltage (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.output_voltage
+            name: Output Voltage
+
+      - type: history-graph
+        title: Battery Voltage (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.battery_voltage
+            name: Battery Voltage
+
+      - type: history-graph
+        title: Load Percent (24h)
         hours_to_show: 24
         refresh_interval: 60
         entities:
           - entity: sensor.load_percent
             name: Load %
+
+      - type: history-graph
+        title: Load Watts Estimated (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
+          - entity: sensor.estimated_load_watts
+            name: Load W
+
+      - type: history-graph
+        title: Input Frequency (24h)
+        hours_to_show: 24
+        refresh_interval: 60
+        entities:
           - entity: sensor.input_frequency_hz
             name: Input Hz
 

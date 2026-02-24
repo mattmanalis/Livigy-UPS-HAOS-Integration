@@ -23,6 +23,7 @@ SENSOR_DESCRIPTIONS = {
     "fault_voltage": {"name": "Fault Voltage", "native_unit": "V", "device_class": "voltage"},
     "output_voltage": {"name": "Output Voltage", "native_unit": "V", "device_class": "voltage"},
     "load_percent": {"name": "UPS Load", "native_unit": "%"},
+    "estimated_load_watts": {"name": "Estimated Load Watts", "native_unit": "W", "device_class": "power"},
     "input_frequency_hz": {"name": "Input Frequency", "native_unit": "Hz", "device_class": "frequency"},
     "battery_voltage": {"name": "Battery Voltage", "native_unit": "V", "device_class": "voltage"},
     "temperature_c": {"name": "UPS Temperature", "native_unit": "°C", "device_class": "temperature"},

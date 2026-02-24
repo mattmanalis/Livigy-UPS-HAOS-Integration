@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
-from homeassistant.const import PERCENTAGE, UnitOfElectricCurrent, UnitOfElectricPotential, UnitOfFrequency, UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
+    UnitOfFrequency,
+    UnitOfPower,
+    UnitOfTemperature,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -16,6 +23,7 @@ UNIT_MAP = {
     "V": UnitOfElectricPotential.VOLT,
     "A": UnitOfElectricCurrent.AMPERE,
     "Hz": UnitOfFrequency.HERTZ,
+    "W": UnitOfPower.WATT,
     "°C": UnitOfTemperature.CELSIUS,
 }
 
@@ -55,4 +63,16 @@ class LivigyUpsSensor(LivigyUpsCoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        return (self.coordinator.data or {}).get(self._key)
+        data = self.coordinator.data or {}
+        if self._key == "estimated_load_watts":
+            load_percent = data.get("load_percent")
+            rated_voltage = data.get("rated_voltage")
+            rated_current = data.get("rated_current")
+            if load_percent is None or rated_voltage is None or rated_current is None:
+                return None
+            try:
+                # Approximation based on apparent rated power and load percent.
+                return round(float(rated_voltage) * float(rated_current) * float(load_percent) / 100.0, 1)
+            except (TypeError, ValueError):
+                return None
+        return data.get(self._key)
