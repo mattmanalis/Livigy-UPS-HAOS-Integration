@@ -26,7 +26,32 @@ UNIT_MAP = {
     "W": UnitOfPower.WATT,
     "°C": UnitOfTemperature.CELSIUS,
 }
-TEXT_SENSOR_KEYS = {"company", "model", "firmware", "ups_mode", "ups_topology", "protocol_family"}
+TEXT_SENSOR_KEYS = {"company", "model", "firmware", "ups_mode", "ups_topology", "protocol_family", "status_summary"}
+VALUE_LABELS = {
+    "ups_mode": {
+        "power_on": "Power On",
+        "standby": "Standby",
+        "bypass": "Bypass",
+        "line": "Line",
+        "battery": "Battery",
+        "battery_test": "Battery Test",
+        "fault": "Fault",
+        "eco": "ECO",
+        "converter": "Converter",
+        "shutdown": "Shutdown",
+    },
+    "ups_topology": {
+        "standby": "Standby",
+        "line_interactive": "Line Interactive",
+        "online": "Online",
+        "unknown": "Unknown",
+    },
+    "protocol_family": {
+        "centurion": "Centurion",
+        "megatec": "Megatec",
+        "unknown": "Unknown",
+    },
+}
 
 
 async def async_setup_entry(
@@ -65,6 +90,12 @@ class LivigyUpsSensor(LivigyUpsCoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         data = self.coordinator.data or {}
+        if self._key in VALUE_LABELS:
+            value = data.get(self._key)
+            if value is None:
+                return None
+            value_str = str(value).strip().lower()
+            return VALUE_LABELS[self._key].get(value_str, str(value))
         if self._key == "estimated_load_watts":
             load_percent = data.get("load_percent")
             rated_watts = data.get("rated_watts")

@@ -45,6 +45,7 @@ SENSOR_DESCRIPTIONS = {
     "firmware": {"name": "UPS Firmware"},
     "ups_mode": {"name": "UPS Mode"},
     "ups_topology": {"name": "UPS Topology"},
+    "status_summary": {"name": "UPS Status Summary"},
     "protocol_family": {"name": "UPS Protocol"},
     "rated_watts": {"name": "Rated Watts", "native_unit": "W", "device_class": "power"},
     "rated_voltage": {"name": "Rated Voltage", "native_unit": "V", "device_class": "voltage"},
@@ -64,4 +65,6 @@ BINARY_SENSOR_DESCRIPTIONS = {
     "test_in_progress": "Test In Progress",
     "shutdown_active": "Shutdown Active",
     "beeper_on": "Beeper On",
+    "on_battery": "On Battery",
+    "overload_warning": "Overload Warning",
 }

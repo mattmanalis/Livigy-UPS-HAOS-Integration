@@ -30,6 +30,7 @@ Home Assistant custom integration for Livigy UPS units (rebadged PowerShield) vi
 - Auto-detects protocol family:
 - Centurion protocol first: `QGS`, `QMD`, `QRI`, `QMOD`, `QVFW`
 - Legacy Megatec fallback: `Q1`, `I`, `F`
+- On Centurion, attempts optional `Q1` fallback to populate `Fault Voltage`
 - Command terminator: `\r`
 - Typical serial side settings on adapter serial side: `2400 8N1`
 
@@ -49,6 +50,7 @@ Sensors:
 - UPS Mode
 - UPS Topology
 - UPS Protocol
+- UPS Status Summary
 - Rated Voltage
 - Rated Current
 - Rated Battery Voltage
@@ -60,6 +62,8 @@ Binary sensors:
 - Battery Low
 - AVR Active
 - UPS Failed
+- On Battery
+- Overload Warning
 - Standby Type
 - Test In Progress
 - Shutdown Active

@@ -163,6 +163,13 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
         if protocol == "centurion":
             try:
+                # Some Centurion units still answer Q1, which provides fault voltage.
+                _, q1_legacy = self._exchange_with_retry("Q1", parse_q1, retries=1, frames_per_try=2)
+                if q1_legacy.get("fault_voltage") is not None:
+                    live_data["fault_voltage"] = q1_legacy["fault_voltage"]
+            except Exception as err:
+                _LOGGER.debug("Optional Q1 fault-voltage fallback failed: %s", err)
+            try:
                 _, identity_data = self._exchange_with_retry("QMD", parse_qmd)
             except Exception as err:
                 _LOGGER.debug("Optional QMD poll failed: %s", err)
@@ -196,6 +203,27 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         data.update(firmware_data)
         data["adapter_connected"] = True
         data["ups_responding"] = True
+        load_percent = data.get("load_percent")
+        ups_mode = str(data.get("ups_mode", "")).lower()
+        data["on_battery"] = ups_mode in {"battery", "battery_test", "battery test"} or bool(data.get("utility_fail"))
+        try:
+            data["overload_warning"] = float(load_percent) >= 100.0 if load_percent is not None else None
+        except (TypeError, ValueError):
+            data["overload_warning"] = None
+        if not data.get("adapter_connected"):
+            data["status_summary"] = "Adapter Disconnected"
+        elif not data.get("ups_responding"):
+            data["status_summary"] = "UPS Not Responding"
+        elif data.get("ups_failed"):
+            data["status_summary"] = "UPS Fault"
+        elif data.get("utility_fail"):
+            data["status_summary"] = "On Battery"
+        elif data.get("battery_low"):
+            data["status_summary"] = "Battery Low"
+        elif data.get("overload_warning"):
+            data["status_summary"] = "Overload"
+        else:
+            data["status_summary"] = "Normal"
         return data
 
     def _check_adapter_connected(self) -> bool:
@@ -307,6 +335,7 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
             data = dict(self.data or {})
             data["adapter_connected"] = adapter_connected
             data["ups_responding"] = False
+            data["status_summary"] = "UPS Not Responding" if adapter_connected else "Adapter Disconnected"
             _LOGGER.warning("UPS poll failed: %s (adapter_connected=%s)", err, adapter_connected)
             await self.hass.async_add_executor_job(self._write_influx, data)
             return data

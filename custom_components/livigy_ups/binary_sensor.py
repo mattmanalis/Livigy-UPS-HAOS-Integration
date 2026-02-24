@@ -10,9 +10,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import BINARY_SENSOR_DESCRIPTIONS, DOMAIN
 from .entity import LivigyUpsCoordinatorEntity
 
-PROBLEM_KEYS = {"utility_fail", "battery_low", "ups_failed"}
+PROBLEM_KEYS = {"utility_fail", "battery_low", "ups_failed", "overload_warning"}
 RUNNING_KEYS = {"test_in_progress", "shutdown_active"}
-POWER_KEYS = {"avr_active"}
+POWER_KEYS = {"avr_active", "on_battery"}
 CONNECTIVITY_KEYS = {"adapter_connected", "ups_responding"}
 
 

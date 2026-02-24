@@ -14,6 +14,14 @@ views:
         title: Live Status
         columns: 4
         entities:
+          - entity: sensor.ups_status_summary
+            name: Status
+          - entity: sensor.ups_mode
+            name: Mode
+          - entity: binary_sensor.on_battery
+            name: On Battery
+          - entity: binary_sensor.overload_warning
+            name: Overload
           - entity: sensor.input_voltage
             name: Input V
           - entity: sensor.output_voltage
@@ -43,9 +51,12 @@ views:
         title: UPS Identity And Ratings
         show_header_toggle: false
         entities:
+          - entity: sensor.ups_protocol
+          - entity: sensor.ups_topology
           - entity: sensor.ups_company
           - entity: sensor.ups_model
           - entity: sensor.ups_firmware
+          - entity: sensor.rated_watts
           - entity: sensor.rated_voltage
           - entity: sensor.rated_current
           - entity: sensor.rated_battery_voltage
@@ -55,10 +66,13 @@ views:
         title: UPS Status Bits
         show_header_toggle: false
         entities:
+          - entity: sensor.ups_status_summary
           - entity: binary_sensor.adapter_connected
           - entity: binary_sensor.ups_responding
+          - entity: binary_sensor.on_battery
           - entity: binary_sensor.utility_fail
           - entity: binary_sensor.battery_low
+          - entity: binary_sensor.overload_warning
           - entity: binary_sensor.avr_active
           - entity: binary_sensor.ups_failed
           - entity: binary_sensor.standby_type
