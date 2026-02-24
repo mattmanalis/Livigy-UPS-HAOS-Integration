@@ -55,7 +55,10 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         buffer = bytearray()
         deadline = time.monotonic() + self.timeout
         while time.monotonic() < deadline:
-            chunk = sock.recv(1)
+            try:
+                chunk = sock.recv(1)
+            except TimeoutError:
+                break
             if not chunk:
                 break
             if chunk in (b"\r", b"\n"):
@@ -101,19 +104,30 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         raise ValueError(f"Failed to parse {cmd} response after {retries} attempts: {last_error}")
 
     def _poll_once(self) -> dict[str, object]:
-        with socket.create_connection((self.host, self.port), timeout=self.timeout) as sock:
-            sock.settimeout(self.timeout)
-            self._drain_socket(sock)
+        last_error: Exception | None = None
+        for connect_attempt in range(1, 4):
+            try:
+                with socket.create_connection((self.host, self.port), timeout=self.timeout) as sock:
+                    sock.settimeout(self.timeout)
+                    self._drain_socket(sock)
 
-            _, q1_data = self._exchange_with_retry(sock, "Q1", parse_q1)
-            _, i_data = self._exchange_with_retry(sock, "I", parse_i)
-            _, f_data = self._exchange_with_retry(sock, "F", parse_f)
+                    _, q1_data = self._exchange_with_retry(sock, "Q1", parse_q1)
+                    _, i_data = self._exchange_with_retry(sock, "I", parse_i)
+                    _, f_data = self._exchange_with_retry(sock, "F", parse_f)
 
-        data: dict[str, object] = {}
-        data.update(q1_data)
-        data.update(i_data)
-        data.update(f_data)
-        return data
+                data: dict[str, object] = {}
+                data.update(q1_data)
+                data.update(i_data)
+                data.update(f_data)
+                return data
+            except Exception as err:
+                last_error = err
+                _LOGGER.debug(
+                    "Poll attempt %s/3 failed, retrying with new TCP connection: %s",
+                    connect_attempt,
+                    err,
+                )
+        raise ValueError(f"Polling failed after 3 connection attempts: {last_error}")
 
     async def _async_update_data(self) -> dict[str, object]:
         try:
