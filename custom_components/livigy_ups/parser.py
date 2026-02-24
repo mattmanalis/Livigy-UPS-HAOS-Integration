@@ -35,6 +35,15 @@ def _parse_int(token: str) -> int:
     return int(float(_normalize_numeric_token(token)))
 
 
+def _parse_optional_float(token: str) -> float | None:
+    normalized = _normalize_numeric_token(token)
+    if not normalized:
+        return None
+    if not any(ch.isdigit() for ch in normalized):
+        return None
+    return float(normalized)
+
+
 def parse_q1(raw: str) -> dict[str, object]:
     payload = _strip_wrapping(raw)
     parts = payload.split()
@@ -87,9 +96,9 @@ def parse_qgs(raw: str) -> dict[str, object]:
         "output_current_a": _parse_float(parts[4]),
         "load_percent": _parse_int(parts[5]),
         "positive_bus_voltage": _parse_float(parts[6]),
-        "negative_bus_voltage": _parse_float(parts[7]),
+        "negative_bus_voltage": _parse_optional_float(parts[7]),
         "battery_voltage": _parse_float(parts[8]),
-        "negative_battery_voltage": _parse_float(parts[9]),
+        "negative_battery_voltage": _parse_optional_float(parts[9]),
         "temperature_c": _parse_float(parts[10]),
         "utility_fail": b7 == "1",
         "battery_low": b6 == "1",
