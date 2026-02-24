@@ -12,6 +12,14 @@ def _strip_wrapping(raw: str) -> str:
     return payload.strip()
 
 
+def _is_number(value: str) -> bool:
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
+
+
 def parse_q1(raw: str) -> dict[str, object]:
     payload = _strip_wrapping(raw)
     parts = payload.split()
@@ -42,8 +50,16 @@ def parse_q1(raw: str) -> dict[str, object]:
 
 
 def parse_i(raw: str) -> dict[str, object]:
-    payload = raw.strip().lstrip("#").strip()
+    raw_payload = raw.strip()
+    if raw_payload.startswith("("):
+        raise ValueError(f"Invalid I response: {raw!r}")
+
+    payload = raw_payload.lstrip("#").strip()
     parts = payload.split()
+    if not parts:
+        raise ValueError(f"Invalid I response: {raw!r}")
+    if _is_number(parts[0]):
+        raise ValueError(f"Invalid I response: {raw!r}")
     if len(parts) < 3:
         return {"company": "", "model": payload, "firmware": ""}
     return {
