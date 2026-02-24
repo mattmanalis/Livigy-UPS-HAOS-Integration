@@ -60,17 +60,23 @@ def _build_shutdown_command(delay_minutes: int, restart_minutes: int | None) -> 
 
 def _get_target_coordinator(hass: HomeAssistant, call: ServiceCall) -> LivigyUpsCoordinator:
     entries = hass.data.get(DOMAIN, {})
-    if not entries:
+    coordinators = {k: v for k, v in entries.items() if not str(k).startswith("_")}
+    if not coordinators:
         raise vol.Invalid("No Livigy UPS entries are loaded")
     entry_id = call.data.get("entry_id")
     if entry_id:
-        coordinator = entries.get(entry_id)
+        coordinator = coordinators.get(entry_id)
         if not coordinator:
             raise vol.Invalid(f"Unknown entry_id: {entry_id}")
         return coordinator
-    if len(entries) == 1:
-        return next(iter(entries.values()))
-    raise vol.Invalid("Multiple Livigy UPS entries found. Provide entry_id.")
+    if len(coordinators) > 1:
+        selected_entry_id = sorted(coordinators.keys())[0]
+        _LOGGER.warning(
+            "Multiple Livigy UPS entries found. No entry_id provided, defaulting to %s",
+            selected_entry_id,
+        )
+        return coordinators[selected_entry_id]
+    return next(iter(coordinators.values()))
 
 
 def _register_services(hass: HomeAssistant) -> None:
