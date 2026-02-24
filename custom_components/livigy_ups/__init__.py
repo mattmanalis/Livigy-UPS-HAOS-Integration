@@ -186,15 +186,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = LivigyUpsCoordinator(hass, host, port, timeout, scan_interval)
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     _register_services(hass)
-    await coordinator.async_refresh()
-    if not coordinator.last_update_success:
-        _LOGGER.warning(
-            "Initial UPS poll failed for %s:%s. Integration will keep retrying in background.",
-            host,
-            port,
-        )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    # Do not block integration setup on initial poll; run refresh in background.
+    hass.async_create_task(coordinator.async_request_refresh())
     return True
 
 
