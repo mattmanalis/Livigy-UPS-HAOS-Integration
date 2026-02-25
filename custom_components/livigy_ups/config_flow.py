@@ -46,6 +46,15 @@ def _normalize_host(value: str) -> str:
     return host.strip()
 
 
+def _normalize_influx_url(value: str) -> str:
+    url = value.strip()
+    if not url:
+        return ""
+    if "://" not in url:
+        url = f"http://{url}"
+    return url.rstrip("/")
+
+
 class LivigyUpsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Livigy UPS."""
 
@@ -56,6 +65,7 @@ class LivigyUpsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             user_input[CONF_HOST] = _normalize_host(str(user_input[CONF_HOST]))
+            user_input[CONF_INFLUX_URL] = _normalize_influx_url(str(user_input.get(CONF_INFLUX_URL, "")))
             if not user_input[CONF_HOST]:
                 errors["base"] = "invalid_host"
                 schema = vol.Schema(
@@ -102,6 +112,7 @@ class LivigyUpsOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
+            user_input[CONF_INFLUX_URL] = _normalize_influx_url(str(user_input.get(CONF_INFLUX_URL, "")))
             return self.async_create_entry(title="", data=user_input)
 
         schema = vol.Schema(

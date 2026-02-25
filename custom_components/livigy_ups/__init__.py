@@ -47,6 +47,15 @@ def _normalize_host(value: str) -> str:
     return host.strip()
 
 
+def _normalize_influx_url(value: str) -> str:
+    url = value.strip()
+    if not url:
+        return ""
+    if "://" not in url:
+        url = f"http://{url}"
+    return url.rstrip("/")
+
+
 def _build_test_command(minutes: int | None, until_low: bool) -> str:
     if until_low:
         return "TL"
@@ -212,7 +221,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     site_id = str(entry.options.get(CONF_SITE_ID, entry.data.get(CONF_SITE_ID, ""))).strip()
     unit_id = str(entry.options.get(CONF_UNIT_ID, entry.data.get(CONF_UNIT_ID, ""))).strip()
     influx_enabled = bool(entry.options.get(CONF_INFLUX_ENABLED, entry.data.get(CONF_INFLUX_ENABLED, False)))
-    influx_url = str(entry.options.get(CONF_INFLUX_URL, entry.data.get(CONF_INFLUX_URL, ""))).strip()
+    influx_url = _normalize_influx_url(str(entry.options.get(CONF_INFLUX_URL, entry.data.get(CONF_INFLUX_URL, ""))))
     influx_org = str(entry.options.get(CONF_INFLUX_ORG, entry.data.get(CONF_INFLUX_ORG, ""))).strip()
     influx_bucket = str(entry.options.get(CONF_INFLUX_BUCKET, entry.data.get(CONF_INFLUX_BUCKET, ""))).strip()
     influx_token = str(entry.options.get(CONF_INFLUX_TOKEN, entry.data.get(CONF_INFLUX_TOKEN, ""))).strip()

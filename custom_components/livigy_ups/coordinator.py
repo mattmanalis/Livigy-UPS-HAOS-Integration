@@ -305,6 +305,8 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         if not (self.influx_url and self.influx_org and self.influx_bucket and self.influx_token):
             _LOGGER.debug("Influx export enabled but config is incomplete; skipping write")
             return
+        if "://" not in self.influx_url:
+            raise ValueError(f"Invalid InfluxDB URL (missing scheme): {self.influx_url!r}")
 
         line = self._to_line_protocol(data)
         if not line:
@@ -328,7 +330,10 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
     async def _async_update_data(self) -> dict[str, object]:
         try:
             data = await self.hass.async_add_executor_job(self._poll_once)
-            await self.hass.async_add_executor_job(self._write_influx, data)
+            try:
+                await self.hass.async_add_executor_job(self._write_influx, data)
+            except Exception as err:
+                _LOGGER.warning("InfluxDB export failed: %s", err)
             return data
         except Exception as err:
             adapter_connected = await self.hass.async_add_executor_job(self._check_adapter_connected)
@@ -337,5 +342,8 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
             data["ups_responding"] = False
             data["status_summary"] = "UPS Not Responding" if adapter_connected else "Adapter Disconnected"
             _LOGGER.warning("UPS poll failed: %s (adapter_connected=%s)", err, adapter_connected)
-            await self.hass.async_add_executor_job(self._write_influx, data)
+            try:
+                await self.hass.async_add_executor_job(self._write_influx, data)
+            except Exception as influx_err:
+                _LOGGER.warning("InfluxDB export failed: %s", influx_err)
             return data
