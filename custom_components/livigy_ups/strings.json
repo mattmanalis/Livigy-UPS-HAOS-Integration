@@ -9,6 +9,7 @@
           "port": "Adapter TCP port",
           "timeout": "Timeout (seconds)",
           "scan_interval": "Poll interval (seconds)",
+          "organisation_id": "Organisation",
           "site_id": "Site ID",
           "unit_id": "Unit/Residence ID",
           "influx_enabled": "Enable InfluxDB export",
@@ -29,6 +30,7 @@
         "data": {
           "timeout": "Timeout (seconds)",
           "scan_interval": "Poll interval (seconds)",
+          "organisation_id": "Organisation",
           "site_id": "Site ID",
           "unit_id": "Unit/Residence ID",
           "influx_enabled": "Enable InfluxDB export",

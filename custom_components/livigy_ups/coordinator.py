@@ -29,6 +29,7 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         port: int,
         timeout: float,
         scan_interval: int,
+        organisation_id: str,
         site_id: str,
         unit_id: str,
         entry_id: str,
@@ -49,6 +50,7 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         self.host = host
         self.port = port
         self.timeout = timeout
+        self.organisation_id = organisation_id
         self.site_id = site_id
         self.unit_id = unit_id
         self.entry_id = entry_id
@@ -276,6 +278,7 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
 
     def _to_line_protocol(self, data: dict[str, object]) -> str:
         tags = {
+            "organisation_id": self.organisation_id or "unknown",
             "site_id": self.site_id or "unknown",
             "unit_id": self.unit_id or "unknown",
             "entry_id": self.entry_id,

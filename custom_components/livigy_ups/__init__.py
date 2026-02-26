@@ -19,6 +19,7 @@ from .const import (
     CONF_INFLUX_TOKEN,
     CONF_INFLUX_URL,
     CONF_INFLUX_VERIFY_SSL,
+    CONF_ORGANISATION_ID,
     CONF_SITE_ID,
     CONF_UNIT_ID,
     SERVICE_CANCEL_BATTERY_TEST,
@@ -218,6 +219,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     port = entry.data[CONF_PORT]
     timeout = entry.options.get(CONF_TIMEOUT, entry.data[CONF_TIMEOUT])
     scan_interval = entry.options.get(CONF_SCAN_INTERVAL, entry.data[CONF_SCAN_INTERVAL])
+    organisation_id = str(entry.options.get(CONF_ORGANISATION_ID, entry.data.get(CONF_ORGANISATION_ID, ""))).strip()
     site_id = str(entry.options.get(CONF_SITE_ID, entry.data.get(CONF_SITE_ID, ""))).strip()
     unit_id = str(entry.options.get(CONF_UNIT_ID, entry.data.get(CONF_UNIT_ID, ""))).strip()
     influx_enabled = bool(entry.options.get(CONF_INFLUX_ENABLED, entry.data.get(CONF_INFLUX_ENABLED, False)))
@@ -238,6 +240,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         port=port,
         timeout=timeout,
         scan_interval=scan_interval,
+        organisation_id=organisation_id,
         site_id=site_id,
         unit_id=unit_id,
         entry_id=entry.entry_id,

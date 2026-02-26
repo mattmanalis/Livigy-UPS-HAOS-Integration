@@ -19,6 +19,7 @@ from .const import (
     CONF_INFLUX_TOKEN,
     CONF_INFLUX_URL,
     CONF_INFLUX_VERIFY_SSL,
+    CONF_ORGANISATION_ID,
     CONF_PORT,
     CONF_SCAN_INTERVAL,
     CONF_SITE_ID,
@@ -87,6 +88,7 @@ class LivigyUpsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
                 vol.Required(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): vol.Coerce(float),
                 vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+                vol.Required(CONF_ORGANISATION_ID): str,
                 vol.Required(CONF_SITE_ID): str,
                 vol.Required(CONF_UNIT_ID): str,
                 vol.Required(CONF_INFLUX_ENABLED, default=DEFAULT_INFLUX_ENABLED): bool,
@@ -128,6 +130,13 @@ class LivigyUpsOptionsFlow(config_entries.OptionsFlow):
                         self.config_entry.data[CONF_SCAN_INTERVAL],
                     ),
                 ): int,
+                vol.Required(
+                    CONF_ORGANISATION_ID,
+                    default=self.config_entry.options.get(
+                        CONF_ORGANISATION_ID,
+                        self.config_entry.data.get(CONF_ORGANISATION_ID, ""),
+                    ),
+                ): str,
                 vol.Required(
                     CONF_SITE_ID,
                     default=self.config_entry.options.get(CONF_SITE_ID, self.config_entry.data.get(CONF_SITE_ID, "")),
