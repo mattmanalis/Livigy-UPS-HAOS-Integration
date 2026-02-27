@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
-from .parser import parse_f, parse_i, parse_q1, parse_qgs, parse_qmd, parse_qmod, parse_qri, parse_qvfw
+from .parser import parse_f, parse_i, parse_q1, parse_qbv, parse_qgs, parse_qmd, parse_qmod, parse_qri, parse_qvfw
 
 _LOGGER = logging.getLogger(DOMAIN)
 
@@ -162,6 +162,7 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
         ratings_data: dict[str, object] = {}
         mode_data: dict[str, object] = {}
         firmware_data: dict[str, object] = {}
+        battery_data: dict[str, object] = {}
 
         if protocol == "centurion":
             try:
@@ -197,12 +198,18 @@ class LivigyUpsCoordinator(DataUpdateCoordinator[dict[str, object]]):
             except Exception as err:
                 _LOGGER.debug("Optional F poll failed: %s", err)
 
+        try:
+            _, battery_data = self._exchange_with_retry("QBV", parse_qbv, retries=1, frames_per_try=3)
+        except Exception as err:
+            _LOGGER.debug("Optional QBV poll failed: %s", err)
+
         data: dict[str, object] = {}
         data.update(live_data)
         data.update(identity_data)
         data.update(ratings_data)
         data.update(mode_data)
         data.update(firmware_data)
+        data.update(battery_data)
         data["adapter_connected"] = True
         data["ups_responding"] = True
         load_percent = data.get("load_percent")

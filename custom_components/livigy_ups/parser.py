@@ -187,6 +187,20 @@ def parse_qvfw(raw: str) -> dict[str, object]:
     return {"firmware": payload.split(":", 1)[1].strip()}
 
 
+def parse_qbv(raw: str) -> dict[str, object]:
+    payload = _strip_wrapping(raw)
+    parts = payload.split()
+    if len(parts) < 5:
+        raise ValueError(f"Invalid QBV response: {raw!r}")
+    return {
+        "battery_pack_voltage": _parse_float(parts[0]),
+        "battery_piece_count": _parse_int(parts[1]),
+        "battery_group_count": _parse_int(parts[2]),
+        "battery_capacity_percent": _parse_int(parts[3]),
+        "battery_remaining_minutes": _parse_int(parts[4]),
+    }
+
+
 def parse_i(raw: str) -> dict[str, object]:
     raw_payload = raw.strip()
     if raw_payload.startswith("("):
